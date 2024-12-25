@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Clock</title>
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: black;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      height: 100vh;
+    }
+    /* Screen Styling */
+    .screen {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: black;
+      color: white;
+      transition: all 1s ease-in-out;
+      z-index: 1000;
+    }
+
+    .hidden {
+      top: -100%;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .slide-left {
+      left: -100%;
+    }
+
+    .box {
+      background-color: #222;
+      width: 60%;
+      padding: 20px;
+      text-align: center;
+      border: 2px solid white;
+      border-radius: 10px;
+      box-shadow: 0 10px 20px rgba(255, 255, 255, 0.5);
+      transform: translateY(100vh);
+      animation: slideUp 2s forwards ease-out;
+    }
+
+    @keyframes slideUp {
+      to {
+        transform: translateY(0);
+      }
+    }
+
+    .box h1 {
+      font-size: 3vw;
+    }
+
+    .box button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: white;
+      color: black;
+      border: none;
+      font-size: 1.5vw;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: all 0.3s;
+    }
+
+    .box button:hover {
+      background-color: #ddd;
+    }
+
+    .manual p {
+      font-size: 1.5vw;
+      line-height: 2vw;
+      padding: 0 5%;
+      margin: 0;
+      text-align: center;
+    }
+
+    .container {
+      width: 125%;
+      display: flex;
+      height: 100%;
+      align-items: center;
+      justify-content: center;
+    }
+    .clock {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 10vw;
+      font-weight: bold;
+      color: white;
+      height: 100%;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      
+    }
+    .clock.green {
+      background-color: #00FF00;
+      
+    }
+    .clock.blue {
+      background-color: #00FFFF;
+    }
+    .controls {
+      width: 8vw;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: black;
+      border-left: 5px solid white;
+    }
+    .btn {
+      width: 80%;
+      padding: 10px;
+      margin: 5% 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: white;
+      color: black;
+      font-size: 2vw;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .btn:hover {
+      background-color: #cccccc;
+    }
+    .btn i {
+      font-size: 1.5vw;
+    }
+  </style>
+</head>
+<body>
+ <!-- Screen 1: Introduction -->
+  <div id="introScreen" class="screen">
+    <div class="box">
+      <h1>AR Chess ♟️ Clock</h1>
+      <button id="introStartBtn">Start</button>
+    </div>
+  </div>
+
+  <!-- Screen 2: Manual -->
+  <div id="manualScreen" class="screen hidden">
+    <div class="box manual">
+      <h1>How to Use</h1>
+      <p> Rotate your device to landscape mode</p>
+      <p>Use the <strong><i class="fas fa-angle-double-up"></i></strong> button to increase the timer.<br>
+        Use the <strong><i class="fas fa-angle-double-down"></i></strong> button to decrease the timer.<br>
+        Press <strong><i class="fas fa-play"></i></strong> to start the clock. Press again to pause it.<br>
+        Reset the timer with <strong><i class="fas fa-sync-alt"></i></strong>.</p>
+      <button id="manualStartBtn">Start Clock</button>
+    </div>
+  </div>
+
+
+  <div class="container">
+    <div class="clock green" id="timer1">05:00</div>
+    <div class="controls">
+      <button class="btn" id="increase">
+        <i class="fas fa-angle-double-up"></i>
+      </button>
+      <button class="btn" id="startPause">
+        <i class="fas fa-play"></i>
+      </button>
+      <button class="btn" id="reset">
+        <i class="fas fa-sync-alt"></i>
+      </button>
+      <button class="btn" id="decrease">
+        <i class="fas fa-angle-double-down"></i>
+      </button>
+    </div>
+    <div class="clock blue" id="timer2">05:00</div>
+  </div>
+
+  <script>
+const introScreen = document.getElementById("introScreen");
+    const manualScreen = document.getElementById("manualScreen");
+    const clockScreen = document.getElementById("clockScreen");
+    const introStartBtn = document.getElementById("introStartBtn");
+    const manualStartBtn = document.getElementById("manualStartBtn");
+
+    const timer1 = document.getElementById("timer1");
+    const timer2 = document.getElementById("timer2");
+    const startPauseButton = document.getElementById("startPause");
+    const resetButton = document.getElementById("reset");
+    const increaseButton = document.getElementById("increase");
+    const decreaseButton = document.getElementById("decrease");
+
+    let timer1Time = 300; // 5 minutes in seconds
+    let timer2Time = 300;
+    let activeTimer = null;
+    let interval = null;
+
+    const timeSteps = [60, 120, 300, 600, 900, 1800, 3600, 5400, 7200]; // Time in seconds
+    let currentStepIndex = 2; // Start at 300 seconds (5 minutes)
+
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function updateTimers() {
+      timer1.textContent = formatTime(timer1Time);
+      timer2.textContent = formatTime(timer2Time);
+    }
+
+    function toggleTimer() {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+        startPauseButton.innerHTML = `<i class="fas fa-play"></i>`; // Change to play icon
+      } else {
+        if (!activeTimer) activeTimer = "timer1";
+        startPauseButton.innerHTML = `<i class="fas fa-pause"></i>`; // Change to pause icon
+        interval = setInterval(() => {
+          if (activeTimer === "timer1") {
+            timer1Time--;
+            if (timer1Time <= 0) clearInterval(interval);
+          } else if (activeTimer === "timer2") {
+            timer2Time--;
+            if (timer2Time <= 0) clearInterval(interval);
+          }
+          updateTimers();
+        }, 1000);
+      }
+    }
+
+    function resetTimers() {
+      clearInterval(interval);
+      interval = null;
+      timer1Time = timer2Time = timeSteps[currentStepIndex];
+      activeTimer = null;
+      startPauseButton.innerHTML = `<i class="fas fa-play"></i>`; // Reset to play icon
+      updateTimers();
+    }
+
+    function adjustTimers(increase = true) {
+      if (increase && currentStepIndex < timeSteps.length - 1) {
+        currentStepIndex++;
+      } else if (!increase && currentStepIndex > 0) {
+        currentStepIndex--;
+      }
+      timer1Time = timer2Time = timeSteps[currentStepIndex];
+      updateTimers();
+    }
+
+    startPauseButton.addEventListener("click", toggleTimer);
+    resetButton.addEventListener("click", resetTimers);
+    increaseButton.addEventListener("click", () => adjustTimers(true));
+    decreaseButton.addEventListener("click", () => adjustTimers(false));
+
+    timer1.addEventListener("click", () => {
+      if (interval) activeTimer = "timer2";
+    });
+
+    timer2.addEventListener("click", () => {
+      if (interval) activeTimer = "timer1";
+    });
+    // Screen Navigation
+    introStartBtn.addEventListener("click", () => {
+      introScreen.classList.add("hidden");
+      manualScreen.classList.remove("hidden");
+    });
+
+    manualStartBtn.addEventListener("click", () => {
+      manualScreen.classList.add("slide-left");
+      setTimeout(() => {
+        clockScreen.classList.remove("hidden");
+        manualScreen.classList.add("hidden");
+      }, 1000);
+    });
+
+    updateTimers();
+  </script>
+</body>
+</html>
